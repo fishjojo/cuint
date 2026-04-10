@@ -1,2 +1,2 @@
-# lasagna
-GPU-accelerated overlap library
+# cuint
+CUDA-accelerated Gaussian Integral Library

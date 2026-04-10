@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021-2024 The PySCF Developers. All Rights Reserved.
+# Copyright 2026 The PySCF Developers. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
-
-############################################################################## This example shows the basic usage of PySCF/GPU4PySCF                    #
-#   For the complete guide, please refer to                                  #
-#     - PySCF user guide (https://pyscf.org/user.html)                       #
-#     - PySCF examples (https://github.com/pyscf/pyscf/tree/master/examples) #
-##############################################################################
-
 import numpy as np
 import cupy as cp
 import pyscf
-from gpu4pyscf.scf import uhf
-from pyscf.scf import uhf as cpu_uhf
-from gpu4pyscf.lib import logger
-from lasagna.overlap import *
+from pyscf.lib import logger
+from cuint.overlap import *
 
 atoms = """
  H -5.8768512   5.12198377 -1.26494537 
@@ -109,96 +100,110 @@ debug_atoms = """
 mol = pyscf.M(
     spin=1,
     atom=atoms,  # water molecule
-    basis="gfn1",  # basis set
-    verbose=5,  # control the level of print info
+    basis="ccpvtz",  # basis set
+    verbose=0,  # control the level of print info
 )
+print(mol.nao)
 
-mf = uhf.UHF(mol)
-mf_cpu = cpu_uhf.UHF(mol)
+log = logger.new_logger(mol, 5)
 
-log = logger.new_logger(mf, 5)
+log.init_timer = lambda **k: (logger.process_clock(), logger.perf_counter())
+
+n_config = 1
+
 t0 = log.init_timer()
-
-plan = create_ovlp_plan(
-    np.array([mol._atm for _ in range(1)]),
-    np.array([mol._bas for _ in range(1)]),
-    np.array([mol._env for _ in range(1)]),
+plan = create_ovlp_plan_new(
+    np.array([mol._atm for _ in range(n_config)]),
+    np.array([mol._bas for _ in range(n_config)]),
+    np.array([mol._env for _ in range(n_config)]),
     screening=False,
 )
-
 t0 = log.timer("overhead", *t0)
 
 # check numerical + warm up
-exp = get_ovlp(plan)
-ref = cp.asarray(mol.intor("int1e_ovlp"))
+exp = get_ovlp(plan).get()
+ref = mol.intor("int1e_ovlp")
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_dipole(plan, (0, 0, 0))
-ref = cp.asarray(mol.intor("int1e_r"))
+origin = np.array([0.2, 0.3, 0.4])
+exp = get_dipole(plan, origin).get()
+with mol.with_common_origin(origin):
+    ref = mol.intor("int1e_r")
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_quadrupole(plan, (0, 0, 0))
-ref = cp.asarray(mol.intor("int1e_rr"))
+exp = get_quadrupole(plan, origin).get()
+with mol.with_common_origin(origin):
+    ref = mol.intor("int1e_rr")
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_ovlp_gradient(plan)
-ref = cp.asarray(mol.intor("int1e_ipovlp"))
+exp = get_ovlp_gradient(plan).get()
+ref = mol.intor("int1e_ipovlp")
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_dipole_gradient(plan, (0, 0, 0))
-ref = cp.asarray(mol.intor("int1e_irp"))
+exp = get_dipole_gradient(plan, origin).get()
+with mol.with_common_origin(origin):
+    ref = mol.intor("int1e_irp")
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_quadrupole_gradient(plan, (0, 0, 0))
-ref = cp.asarray(mol.intor("int1e_irrp"))
+exp = get_quadrupole_gradient(plan, origin).get()
+with mol.with_common_origin(origin):
+    ref = mol.intor("int1e_irrp")
 assert np.linalg.norm(exp - ref) < 1e-9
 
 # measure timing
+n = 10
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_ovlp(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("ovlp", *t0)
 
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_dipole(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("dipole", *t0)
 
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_quadrupole(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("quadrupole", *t0)
 
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_ovlp_gradient(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("gradient", *t0)
 
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_dipole_gradient(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("dipole gradient", *t0)
 
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_quadrupole_gradient(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("quadrupole gradient", *t0)
 
 t0 = log.init_timer()
-for _ in range(1):
+for _ in range(n):
     result = get_ovlp(plan)
     result = get_dipole(plan)
     result = get_quadrupole(plan)
     result = get_ovlp_gradient(plan)
     result = get_dipole_gradient(plan)
     result = get_quadrupole_gradient(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("family", *t0)
 
-for _ in range(1):
-    plan = create_ovlp_plan(
-        np.array([mol._atm for _ in range(1)]),
-        np.array([mol._bas for _ in range(1)]),
-        np.array([mol._env for _ in range(1)]),
+for _ in range(n):
+    plan = create_ovlp_plan_new(
+        np.array([mol._atm for _ in range(n_config)]),
+        np.array([mol._bas for _ in range(n_config)]),
+        np.array([mol._env for _ in range(n_config)]),
     )
     result = get_ovlp(plan)
     result = get_dipole(plan)
@@ -206,4 +211,5 @@ for _ in range(1):
     result = get_ovlp_gradient(plan)
     result = get_dipole_gradient(plan)
     result = get_quadrupole_gradient(plan)
+cp.cuda.get_current_stream().synchronize()
 t0 = log.timer("family with plan", *t0)
