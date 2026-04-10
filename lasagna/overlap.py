@@ -22,7 +22,7 @@ from pyscf.gto.moleintor import make_loc
 from pyscf.gto import NPRIM_OF, NCTR_OF, ANG_OF, PTR_EXP, PTR_COEFF
 
 
-libovlp = ctypes.CDLL("libovlp.so")
+libovlp = ctypes.CDLL("../libcuint.so")
 
 
 def cast_to_pointer(array):
@@ -33,6 +33,105 @@ def cast_to_pointer(array):
     else:
         raise ValueError("Invalid array type")
 
+
+def create_ovlp_plan_new(atm, bas, env, screening=False, cart=False):
+    if screening:
+        is_screened = 1
+        raise NotImplementedError
+    else:
+        is_screened = 0
+
+    if cart:
+        raise NotImplementedError
+
+    if atm.ndim == 2:
+        atm = atm[np.newaxis, ...]
+    if bas.ndim == 2:
+        bas = bas[np.newaxis, ...]
+    if env.ndim == 1:
+        env = env[np.newaxis, ...]
+
+    n_configurations = atm.shape[0]
+
+    ao_loc = make_loc(bas[0], "sph")
+    n_functions = ao_loc[-1]
+
+    ls = bas[0, :, ANG_OF]
+    sort_idx = np.argsort(ls)
+    sorted_bas = bas[:, sort_idx]
+
+    sorted_shl_start = ao_loc[:-1][sort_idx]
+
+    nctr = sorted_bas[0, :, NCTR_OF]
+    nprim = sorted_bas[0, :, NPRIM_OF]
+    decontracted_basis = np.repeat(sorted_bas, nctr, axis=-2)
+    decontracted_basis[..., NCTR_OF] = 1
+
+    _tmp = np.arange(np.sum(nctr)) - np.repeat(np.cumsum(np.r_[0, nctr[:-1]]), nctr)
+    coeff_offset = _tmp * np.repeat(nprim, nctr)
+    decontracted_basis[..., PTR_COEFF] += coeff_offset
+
+    sorted_shl_start = np.repeat(sorted_shl_start, nctr)
+    sorted_shl_start += _tmp * np.repeat(2 * sorted_bas[0,:,ANG_OF] + 1, nctr)
+
+    nprim = np.repeat(nprim, nctr)
+    decontracted_basis = np.repeat(decontracted_basis, nprim, axis=-2)
+
+    primitive_offset = (
+        np.arange(np.sum(nprim))
+        - np.repeat(np.cumsum(np.r_[0, nprim[:-1]]), nprim)
+    )
+    decontracted_basis[:, :, NPRIM_OF] = 1
+    decontracted_basis[:, :, PTR_COEFF] += primitive_offset
+    decontracted_basis[:, :, PTR_EXP] += primitive_offset
+
+    shell_to_ao = np.repeat(sorted_shl_start, nprim)
+
+    n_primitives = decontracted_basis.shape[-2]
+
+    angulars = decontracted_basis[0,:,ANG_OF]
+    spikes = np.flatnonzero(np.diff(angulars)) + 1
+    max_angular = len(spikes)
+    l_loc = np.r_[0, spikes, n_primitives]
+
+    grouped_primitives_ranges = np.empty((max_angular+1, 2), dtype=np.int32)
+    grouped_primitives_ranges[:, 0] = l_loc[:-1]
+    grouped_primitives_ranges[:, 1] = l_loc[1:]
+
+    pairs = []
+
+    for i_angular in range(max_angular + 1):
+        i_range = grouped_primitives_ranges[i_angular]
+        for j_angular in range(i_angular, max_angular + 1):
+            j_range = grouped_primitives_ranges[j_angular]
+
+            if screening:
+                raise NotImplementedError
+            else:
+                n_rows = i_range[1] - i_range[0]
+                n_cols = j_range[1] - j_range[0]
+                if i_angular == j_angular:
+                    n_pairs = (n_rows + 1) * n_rows // 2
+                else:
+                    n_pairs = n_rows * n_cols
+                pair_indices = cp.array([*i_range, *j_range], dtype=cp.int32)
+
+            pairs.append((i_angular, j_angular, pair_indices, n_pairs))
+
+    plan = {
+        "atms": cp.asarray(atm, dtype=cp.int32),
+        "bases": cp.asarray(decontracted_basis, dtype=cp.int32),
+        "envs": cp.asarray(env, dtype=cp.double),
+        "shell_to_ao": cp.asarray(shell_to_ao, dtype=cp.int32),
+        "n_configurations": n_configurations,
+        "n_functions": n_functions,
+        "n_primitives": n_primitives,
+        "grouped_primitive_ranges": grouped_primitives_ranges,
+        "pairs": pairs,
+        "is_screened": is_screened,
+    }
+
+    return plan
 
 def create_ovlp_plan(atms, bases, envs, screening=False):
     assert len(atms.shape) == len(bases.shape)
