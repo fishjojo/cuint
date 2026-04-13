@@ -1,7 +1,8 @@
+#include <math.h>
+#include "cuint.h"
 #include "macro.cuh"
 #include "recursion.cuh"
 #include "write.cuh"
-#include <math.h>
 
 namespace ovlp {
 template <int i_angular, int j_angular>
@@ -126,7 +127,6 @@ dipole_gradient(double *result, const int *pair_indices, const int n_primitives,
 }
 } // namespace ovlp
 
-extern "C" {
 void dipole(double *result, const int *pair_indices, const int n_pairs,
             const int n_primitives, const int *primitive_to_function,
             const int n_functions, const int *atm, const int atm_stride,
@@ -162,5 +162,4 @@ void dipole_gradient(double *result, const int *pair_indices, const int n_pairs,
   switch (i_angular * 10 + j_angular) {
     tabulate_multipole(ovlp::dipole_gradient);
   }
-}
 }

@@ -22,7 +22,7 @@ from pyscf.gto.moleintor import make_loc
 from pyscf.gto import NPRIM_OF, NCTR_OF, ANG_OF, PTR_EXP, PTR_COEFF
 
 
-libovlp = ctypes.CDLL("../libcuint.so")
+libovlp = ctypes.CDLL("../lib/libcuint.so")
 
 
 def cast_to_pointer(array):
