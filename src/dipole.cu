@@ -127,7 +127,8 @@ dipole_gradient(double *result, const int *pair_indices, const int n_primitives,
 }
 } // namespace ovlp
 
-void dipole(double *result, const int *pair_indices, const int n_pairs,
+void dipole(cudaStream_t stream,
+            double *result, const int *pair_indices, const int n_pairs,
             const int n_primitives, const int *primitive_to_function,
             const int n_functions, const int *atm, const int atm_stride,
             const int *bas, const int bas_stride, const double *env,
@@ -145,7 +146,8 @@ void dipole(double *result, const int *pair_indices, const int n_pairs,
   }
 }
 
-void dipole_gradient(double *result, const int *pair_indices, const int n_pairs,
+void dipole_gradient(cudaStream_t stream,
+                     double *result, const int *pair_indices, const int n_pairs,
                      const int n_primitives, const int *primitive_to_function,
                      const int n_functions, const int *atm,
                      const int atm_stride, const int *bas, const int bas_stride,

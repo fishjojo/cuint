@@ -224,7 +224,8 @@ __global__ void quadrupole_gradient(
 }
 } // namespace ovlp
 
-void quadrupole(double *result, const int *pair_indices, const int n_pairs,
+void quadrupole(cudaStream_t stream,
+                double *result, const int *pair_indices, const int n_pairs,
                 const int n_primitives, const int *primitive_to_function,
                 const int n_functions, const int *atm, const int atm_stride,
                 const int *bas, const int bas_stride, const double *env,
@@ -243,6 +244,7 @@ void quadrupole(double *result, const int *pair_indices, const int n_pairs,
 }
 
 void quadrupole_gradient(
+    cudaStream_t stream,
     double *result, const int *pair_indices, const int n_pairs,
     const int n_primitives, const int *primitive_to_function,
     const int n_functions, const int *atm, const int atm_stride, const int *bas,

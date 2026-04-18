@@ -122,7 +122,7 @@
 // kernel macro
 #define kernel_macro(kernel, i, j)                                             \
   case i * 10 + j:                                                             \
-    kernel<i, j><<<block_grid, block_size>>>(                                  \
+    kernel<i, j><<<block_grid, block_size, 0, stream>>>(                                  \
         result, pair_indices, n_primitives, n_pairs, primitive_to_function,    \
         n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,        \
         is_screened);                                                          \
@@ -130,7 +130,7 @@
 
 #define multipole_kernel_macro(kernel, i, j)                                   \
   case i * 10 + j:                                                             \
-    kernel<i, j><<<block_grid, block_size>>>(                                  \
+    kernel<i, j><<<block_grid, block_size, 0, stream>>>(                                  \
         result, pair_indices, n_primitives, n_pairs, primitive_to_function,    \
         n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,        \
         reference_point_x, reference_point_y, reference_point_z, is_screened); \
