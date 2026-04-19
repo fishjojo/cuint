@@ -134,12 +134,15 @@ void dipole(cudaStream_t stream,
             const int *bas, const int bas_stride, const double *env,
             const int env_stride, const int n_configurations,
             const int i_angular, const int j_angular,
-            const double reference_point_x, const double reference_point_y,
-            const double reference_point_z, const int is_screened) {
+            const int is_screened) {
 
   const dim3 block_size{256, 1, 1};
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
                         1};
+
+  const double reference_point_x = env[PTR_COMMON_ORIG];
+  const double reference_point_y = env[PTR_COMMON_ORIG+1];
+  const double reference_point_z = env[PTR_COMMON_ORIG+2];
 
   switch (i_angular * 10 + j_angular) {
     tabulate_multipole(ovlp::dipole_kernel);
@@ -153,13 +156,15 @@ void dipole_gradient(cudaStream_t stream,
                      const int atm_stride, const int *bas, const int bas_stride,
                      const double *env, const int env_stride,
                      const int n_configurations, const int i_angular,
-                     const int j_angular, const double reference_point_x,
-                     const double reference_point_y,
-                     const double reference_point_z, const int is_screened) {
+                     const int j_angular, const int is_screened) {
 
   const dim3 block_size{256, 1, 1};
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
                         1};
+
+  const double reference_point_x = env[PTR_COMMON_ORIG];
+  const double reference_point_y = env[PTR_COMMON_ORIG+1];
+  const double reference_point_z = env[PTR_COMMON_ORIG+2];
 
   switch (i_angular * 10 + j_angular) {
     tabulate_multipole(ovlp::dipole_gradient);

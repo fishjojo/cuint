@@ -245,6 +245,7 @@ def get_ovlp(plan):
 
     for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
         libovlp.overlap(
+            0,
             cast_to_pointer(result),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -273,6 +274,7 @@ def get_ovlp_gradient(plan):
 
     for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
         libovlp.overlap_gradient(
+            0,
             cast_to_pointer(result),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -294,13 +296,14 @@ def get_ovlp_gradient(plan):
     return result - result.transpose(0, 1, -1, -2)
 
 
-def get_dipole(plan, reference_point=(0, 0, 0)):
+def get_dipole(plan):
     result = cp.zeros(
         (plan["n_configurations"], 3, plan["n_functions"], plan["n_functions"])
     )
 
     for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
         libovlp.dipole(
+            0,
             cast_to_pointer(result),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -316,9 +319,6 @@ def get_dipole(plan, reference_point=(0, 0, 0)):
             ctypes.c_int(plan["n_configurations"]),
             ctypes.c_int(i_angular),
             ctypes.c_int(j_angular),
-            ctypes.c_double(reference_point[0]),
-            ctypes.c_double(reference_point[1]),
-            ctypes.c_double(reference_point[2]),
             ctypes.c_int(plan["is_screened"]),
         )
 
@@ -336,6 +336,7 @@ def get_dipole_gradient(plan, reference_point=(0, 0, 0)):
 
     for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
         libovlp.overlap(
+            0,
             cast_to_pointer(ovlp),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -355,6 +356,7 @@ def get_dipole_gradient(plan, reference_point=(0, 0, 0)):
         )
 
         libovlp.dipole_gradient(
+            0,
             cast_to_pointer(result),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -397,6 +399,7 @@ def get_quadrupole(plan, reference_point=(0, 0, 0)):
     for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
         assert i_angular <= j_angular
         libovlp.quadrupole(
+            0,
             cast_to_pointer(result),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -435,6 +438,7 @@ def get_quadrupole_gradient(plan, reference_point=(0, 0, 0)):
 
     for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
         libovlp.dipole(
+            0,
             cast_to_pointer(dipole),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
@@ -450,13 +454,11 @@ def get_quadrupole_gradient(plan, reference_point=(0, 0, 0)):
             ctypes.c_int(plan["n_configurations"]),
             ctypes.c_int(i_angular),
             ctypes.c_int(j_angular),
-            ctypes.c_double(reference_point[0]),
-            ctypes.c_double(reference_point[1]),
-            ctypes.c_double(reference_point[2]),
             ctypes.c_int(plan["is_screened"]),
         )
 
         libovlp.quadrupole_gradient(
+            0,
             cast_to_pointer(result),
             cast_to_pointer(pair_indices),
             ctypes.c_int(n_pairs),
