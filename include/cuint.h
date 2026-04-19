@@ -49,8 +49,7 @@ void quadrupole(cudaStream_t stream,
                 const int *bas, const int bas_stride, const double *env,
                 const int env_stride, const int n_configurations,
                 const int i_angular, const int j_angular,
-                const double reference_point_x, const double reference_point_y,
-                const double reference_point_z, const int is_screened);
+                const int is_screened);
 
 void quadrupole_gradient(
     cudaStream_t stream,
@@ -59,8 +58,7 @@ void quadrupole_gradient(
     const int n_functions, const int *atm, const int atm_stride, const int *bas,
     const int bas_stride, const double *env, const int env_stride,
     const int n_configurations, const int i_angular, const int j_angular,
-    const double reference_point_x, const double reference_point_y,
-    const double reference_point_z, const int is_screened);
+    const int is_screened);
 
 #ifdef __cplusplus
 }

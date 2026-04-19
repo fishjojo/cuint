@@ -325,7 +325,7 @@ def get_dipole(plan):
     return result + result.transpose(0, 1, -1, -2)
 
 
-def get_dipole_gradient(plan, reference_point=(0, 0, 0)):
+def get_dipole_gradient(plan):
     result = cp.zeros(
         (plan["n_configurations"], 9, plan["n_functions"], plan["n_functions"])
     )
@@ -372,9 +372,6 @@ def get_dipole_gradient(plan, reference_point=(0, 0, 0)):
             ctypes.c_int(plan["n_configurations"]),
             ctypes.c_int(i_angular),
             ctypes.c_int(j_angular),
-            ctypes.c_double(reference_point[0]),
-            ctypes.c_double(reference_point[1]),
-            ctypes.c_double(reference_point[2]),
             ctypes.c_int(plan["is_screened"]),
         )
 
@@ -391,7 +388,7 @@ def get_dipole_gradient(plan, reference_point=(0, 0, 0)):
     return result
 
 
-def get_quadrupole(plan, reference_point=(0, 0, 0)):
+def get_quadrupole(plan):
     result = cp.zeros(
         (plan["n_configurations"], 9, plan["n_functions"], plan["n_functions"])
     )
@@ -415,9 +412,6 @@ def get_quadrupole(plan, reference_point=(0, 0, 0)):
             ctypes.c_int(plan["n_configurations"]),
             ctypes.c_int(i_angular),
             ctypes.c_int(j_angular),
-            ctypes.c_double(reference_point[0]),
-            ctypes.c_double(reference_point[1]),
-            ctypes.c_double(reference_point[2]),
             ctypes.c_int(plan["is_screened"]),
         )
     result += result.transpose(0, 1, 3, 2)
@@ -427,7 +421,7 @@ def get_quadrupole(plan, reference_point=(0, 0, 0)):
     return result
 
 
-def get_quadrupole_gradient(plan, reference_point=(0, 0, 0)):
+def get_quadrupole_gradient(plan):
     result = cp.zeros(
         (plan["n_configurations"], 27, plan["n_functions"], plan["n_functions"])
     )
@@ -474,9 +468,6 @@ def get_quadrupole_gradient(plan, reference_point=(0, 0, 0)):
             ctypes.c_int(plan["n_configurations"]),
             ctypes.c_int(i_angular),
             ctypes.c_int(j_angular),
-            ctypes.c_double(reference_point[0]),
-            ctypes.c_double(reference_point[1]),
-            ctypes.c_double(reference_point[2]),
             ctypes.c_int(plan["is_screened"]),
         )
 

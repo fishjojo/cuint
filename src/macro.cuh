@@ -122,38 +122,13 @@
 // kernel macro
 #define kernel_macro(kernel, i, j)                                             \
   case i * 10 + j:                                                             \
-    kernel<i, j><<<block_grid, block_size, 0, stream>>>(                                  \
+    kernel<i, j><<<block_grid, block_size, 0, stream>>>(                       \
         result, pair_indices, n_primitives, n_pairs, primitive_to_function,    \
         n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,        \
         is_screened);                                                          \
     break;
 
-#define multipole_kernel_macro(kernel, i, j)                                   \
-  case i * 10 + j:                                                             \
-    kernel<i, j><<<block_grid, block_size, 0, stream>>>(                                  \
-        result, pair_indices, n_primitives, n_pairs, primitive_to_function,    \
-        n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,        \
-        reference_point_x, reference_point_y, reference_point_z, is_screened); \
-    break;
-
 // tabulator
-#define tabulate_multipole(kernel)                                             \
-  multipole_kernel_macro(kernel, 0, 0);                                        \
-  multipole_kernel_macro(kernel, 0, 1);                                        \
-  multipole_kernel_macro(kernel, 0, 2);                                        \
-  multipole_kernel_macro(kernel, 0, 3);                                        \
-  multipole_kernel_macro(kernel, 0, 4);                                        \
-  multipole_kernel_macro(kernel, 1, 1);                                        \
-  multipole_kernel_macro(kernel, 1, 2);                                        \
-  multipole_kernel_macro(kernel, 1, 3);                                        \
-  multipole_kernel_macro(kernel, 1, 4);                                        \
-  multipole_kernel_macro(kernel, 2, 2);                                        \
-  multipole_kernel_macro(kernel, 2, 3);                                        \
-  multipole_kernel_macro(kernel, 2, 4);                                        \
-  multipole_kernel_macro(kernel, 3, 3);                                        \
-  multipole_kernel_macro(kernel, 3, 4);                                        \
-  multipole_kernel_macro(kernel, 4, 4);
-
 #define tabulate_kernel(kernel)                                                \
   kernel_macro(kernel, 0, 0);                                                  \
   kernel_macro(kernel, 0, 1);                                                  \

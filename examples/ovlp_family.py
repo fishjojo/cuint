@@ -126,28 +126,52 @@ ref = mol.intor("int1e_ovlp")
 assert np.linalg.norm(exp - ref) < 1e-9
 
 origin = np.array([0.2, 0.3, 0.4])
-exp = get_dipole(plan, origin).get()
 with mol.with_common_origin(origin):
     ref = mol.intor("int1e_r")
+    plan1 = create_ovlp_plan_new(
+        np.array([mol._atm for _ in range(n_config)]),
+        np.array([mol._bas for _ in range(n_config)]),
+        np.array([mol._env for _ in range(n_config)]),
+        screening=False,
+    )
+    exp = get_dipole(plan1).get()
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_quadrupole(plan, origin).get()
 with mol.with_common_origin(origin):
     ref = mol.intor("int1e_rr")
-assert np.linalg.norm(exp - ref) < 1e-9
+    plan1 = create_ovlp_plan_new(
+        np.array([mol._atm for _ in range(n_config)]),
+        np.array([mol._bas for _ in range(n_config)]),
+        np.array([mol._env for _ in range(n_config)]),
+        screening=False,
+    )
+    exp = get_quadrupole(plan1).get()
+assert np.linalg.norm(exp - ref) < 1e-8
 
 exp = get_ovlp_gradient(plan).get()
 ref = mol.intor("int1e_ipovlp")
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_dipole_gradient(plan, origin).get()
 with mol.with_common_origin(origin):
     ref = mol.intor("int1e_irp")
+    plan1 = create_ovlp_plan_new(
+        np.array([mol._atm for _ in range(n_config)]),
+        np.array([mol._bas for _ in range(n_config)]),
+        np.array([mol._env for _ in range(n_config)]),
+        screening=False,
+    )
+    exp = get_dipole_gradient(plan1).get()
 assert np.linalg.norm(exp - ref) < 1e-9
 
-exp = get_quadrupole_gradient(plan, origin).get()
 with mol.with_common_origin(origin):
     ref = mol.intor("int1e_irrp")
+    plan1 = create_ovlp_plan_new(
+        np.array([mol._atm for _ in range(n_config)]),
+        np.array([mol._bas for _ in range(n_config)]),
+        np.array([mol._env for _ in range(n_config)]),
+        screening=False,
+    )
+    exp = get_quadrupole_gradient(plan1).get()
 assert np.linalg.norm(exp - ref) < 1e-9
 
 # measure timing
