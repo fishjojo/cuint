@@ -6,11 +6,23 @@ set(cuint_SOVERSION 1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(DEFINED CUDA_ARCHITECTURES)
-  set(CMAKE_CUDA_ARCHITECTURES "${CUDA_ARCHITECTURES}")
-else()
-  set(CMAKE_CUDA_ARCHITECTURES "70-real;80-real;90-real")
+# Device architectures. Priority:
+#   1. an explicit CMAKE_CUDA_ARCHITECTURES from the consumer (preferred knob),
+#   2. the legacy CUDA_ARCHITECTURES variable,
+#   3. a default covering up to sm_120 (PTX) for the detected CUDA toolkit
+#      (CUDA 13 dropped sm_70 and below).
+if(NOT CMAKE_CUDA_ARCHITECTURES)
+  if(DEFINED CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "${CUDA_ARCHITECTURES}")
+  elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 13)
+    set(CMAKE_CUDA_ARCHITECTURES "75-real;80-real;90-real;100-real;110-real;120-virtual")
+  elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_GREATER_EQUAL 12.8)
+    set(CMAKE_CUDA_ARCHITECTURES "70-real;80-real;90-real;100-real;101-real;120-virtual")
+  else()
+    set(CMAKE_CUDA_ARCHITECTURES "70-real;80-real;90-virtual")
+  endif()
 endif()
+message(STATUS "cuint CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 
 include(GNUInstallDirs)
 
