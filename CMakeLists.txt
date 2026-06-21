@@ -28,6 +28,7 @@ include(GNUInstallDirs)
 
 set(cuintSrc
   src/overlap.cu src/dipole.cu src/quadrupole.cu
+  src/pbc_overlap.cu
 )
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
