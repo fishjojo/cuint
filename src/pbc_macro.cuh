@@ -24,14 +24,14 @@
 #define bas(SLOT, I) bas[BAS_SLOTS * (I) + (SLOT)]
 
 #define OVLP_SPELL                                                             \
-  atm += blockIdx.y * atm_stride;                                              \
-  bas += blockIdx.y * bas_stride;                                              \
-  env += blockIdx.y * env_stride;                                              \
   mask += blockIdx.y * gridDim.z;                                              \
-  lattice_vectors += blockIdx.y * 9;                                           \
   if (mask[blockIdx.z] == 0) {                                                 \
     return;                                                                    \
   }                                                                            \
+  atm += blockIdx.y * atm_stride;                                              \
+  bas += blockIdx.y * bas_stride;                                              \
+  env += blockIdx.y * env_stride;                                              \
+  Ls  += (blockIdx.y * gridDim.z + blockIdx.z) * 3;                            \
   int pair_idx = blockIdx.x * blockDim.x + threadIdx.x;                        \
   if (pair_idx >= n_pairs)                                                     \
     return;                                                                    \
@@ -75,21 +75,12 @@
   const int j_atom = bas(ATOM_OF, j_primitive);                                \
   const int i_coord_offset = atm(PTR_COORD, i_atom);                           \
   const int j_coord_offset = atm(PTR_COORD, j_atom);                           \
-  const int image_shift_a = image_indices[3 * blockIdx.z];                     \
-  const int image_shift_b = image_indices[3 * blockIdx.z + 1];                 \
-  const int image_shift_c = image_indices[3 * blockIdx.z + 2];                 \
   const double i_x = env[i_coord_offset + 0];                                  \
   const double i_y = env[i_coord_offset + 1];                                  \
   const double i_z = env[i_coord_offset + 2];                                  \
-  const double j_x =                                                           \
-      env[j_coord_offset + 0] + image_shift_a * lattice_vectors[0] +           \
-      image_shift_b * lattice_vectors[3] + image_shift_c * lattice_vectors[6]; \
-  const double j_y =                                                           \
-      env[j_coord_offset + 1] + image_shift_a * lattice_vectors[1] +           \
-      image_shift_b * lattice_vectors[4] + image_shift_c * lattice_vectors[7]; \
-  const double j_z =                                                           \
-      env[j_coord_offset + 2] + image_shift_a * lattice_vectors[2] +           \
-      image_shift_b * lattice_vectors[5] + image_shift_c * lattice_vectors[8]; \
+  const double j_x = env[j_coord_offset + 0] + Ls[0];                          \
+  const double j_y = env[j_coord_offset + 1] + Ls[1];                          \
+  const double j_z = env[j_coord_offset + 2] + Ls[2];                          \
   const double ix_to_jx = j_x - i_x;                                           \
   const double iy_to_jy = j_y - i_y;                                           \
   const double iz_to_jz = j_z - i_z;                                           \
@@ -143,8 +134,7 @@
     kernel<i, j><<<block_grid, block_size, 0, stream>>>(                       \
         result, pair_indices, n_primitives, n_pairs, primitive_to_function,    \
         n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,        \
-        lattice_vectors, image_indices, mask, is_screened,                     \
-        reduce_over_images);                                                   \
+        Ls, mask, is_screened, reduce_over_images);                            \
     break;
 
 // tabulator

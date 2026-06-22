@@ -11,9 +11,8 @@ __global__ void pbc_kernel(double *result, const int *pair_indices,
                            const int n_primitives, const int n_pairs,
                            const int *primitive_to_function, const int n_functions,
                            const int *atm, const int atm_stride, const int *bas,
-                           const int bas_stride, const double *env,
-                           const int env_stride, const double *lattice_vectors,
-                           const int *image_indices, const int *mask,
+                           const int bas_stride, const double *env, const int env_stride,
+                           const double *Ls, const int *mask,
                            const int is_screened, const int reduce_over_images) {
 
   const int matrix_stride = n_functions * n_functions;
@@ -42,9 +41,8 @@ pbc_gradient(double *result, const int *pair_indices, const int n_primitives,
              const int n_pairs, const int *primitive_to_function,
              const int n_functions, const int *atm, const int atm_stride,
              const int *bas, const int bas_stride, const double *env,
-             const int env_stride, const double *lattice_vectors,
-             const int *image_indices, const int *mask, const int is_screened,
-             const int reduce_over_images) {
+             const int env_stride, const double *Ls, const int *mask,
+             const int is_screened, const int reduce_over_images) {
 
   const int matrix_stride = 3 * n_functions * n_functions;
 
@@ -84,10 +82,11 @@ void pbc_overlap(cudaStream_t stream,
                  const int n_functions, const int *atm, const int atm_stride,
                  const int *bas, const int bas_stride, const double *env,
                  const int env_stride, const int n_configurations,
-                 const double *lattice_vectors, const int *image_indices,
-                 const int n_images, const int *mask, const int i_angular,
-                 const int j_angular, const int is_screened,
-                 const int reduce_over_images) {
+                 const double *Ls, // (n_configurations, n_images, 3)
+                 const int n_images,
+                 const int *mask,  // (n_configurations, n_images)
+                 const int i_angular, const int j_angular,
+                 const int is_screened, const int reduce_over_images) {
 
   const dim3 block_size{256, 1, 1};
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
@@ -103,10 +102,11 @@ void pbc_overlap_gradient(cudaStream_t stream,
                           const int *atm, const int atm_stride, const int *bas,
                           const int bas_stride, const double *env,
                           const int env_stride, const int n_configurations,
-                          const double *lattice_vectors, const int *image_indices,
-                          const int n_images, const int *mask, const int i_angular,
-                          const int j_angular, const int is_screened,
-                          const int reduce_over_images) {
+                          const double *Ls, // (n_configurations, n_images, 3)
+                          const int n_images,
+                          const int *mask,  // (n_configurations, n_images)
+                          const int i_angular, const int j_angular,
+                          const int is_screened, const int reduce_over_images) {
 
   const dim3 block_size{256, 1, 1};
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
