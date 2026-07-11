@@ -32,8 +32,9 @@ write_integral(double *output, const double x_pairs[], const double y_pairs[],
             constexpr double cj = Cj[joff][j];
             constexpr double abs_cj = (cj < 0.0) ? -cj : cj;
             if constexpr (abs_cj > 1e-15) {
+              constexpr double cij = ci * cj;
               constexpr int xj=Bj[j][0], yj=Bj[j][1], zj=Bj[j][2];
-              expression += ci * cj * x_pairs[xi * stride + xj] *
+              expression += cij * x_pairs[xi * stride + xj] *
                             y_pairs[yi * stride + yj] * z_pairs[zi * stride + zj];
             }
           });
