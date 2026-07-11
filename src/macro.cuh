@@ -62,10 +62,8 @@
   }                                                                            \
   const double alpha = env[bas(PTR_EXP, i_primitive)];                         \
   const double beta = env[bas(PTR_EXP, j_primitive)];                          \
-  const double c1 =                                                            \
-      env[bas(PTR_COEFF, i_primitive)] * rr::common_fac_sp<i_angular>();       \
-  const double c2 =                                                            \
-      env[bas(PTR_COEFF, j_primitive)] * rr::common_fac_sp<j_angular>();       \
+  const double c1 = env[bas(PTR_COEFF, i_primitive)];                          \
+  const double c2 = env[bas(PTR_COEFF, j_primitive)];                          \
   const int i_atom = bas(ATOM_OF, i_primitive);                                \
   const int j_atom = bas(ATOM_OF, j_primitive);                                \
   const int i_coord_offset = atm(PTR_COORD, i_atom);                           \

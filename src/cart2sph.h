@@ -152,7 +152,7 @@ consteval double c2s(int l, int m, int lx, int ly, int lz) {
     }
     result += A(l, k, mu) * tmp;
   }
-  if (l > 1) result *= N(l, mu);
+  result *= N(l, mu);
 
   return result;
 }
