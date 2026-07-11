@@ -3,8 +3,11 @@ project (cuint LANGUAGES CXX CUDA)
 set(cuint_VERSION 1.0.0)
 set(cuint_SOVERSION 1)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_CUDA_STANDARD 20)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Device architectures. Priority:
 #   1. an explicit CMAKE_CUDA_ARCHITECTURES from the consumer (preferred knob),
@@ -38,6 +41,10 @@ set_target_properties(cuint PROPERTIES
   VERSION ${cuint_VERSION}
   SOVERSION ${cuint_SOVERSION}
   LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
+)
+
+target_compile_options(cuint PRIVATE
+  $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
 )
 
 target_include_directories(cuint

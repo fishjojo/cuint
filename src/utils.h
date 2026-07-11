@@ -1,3 +1,6 @@
+#ifndef CUINT_UTILS_H
+#define CUINT_UTILS_H
+
 #include <utility>
 #include <type_traits>
 
@@ -10,3 +13,4 @@ constexpr void static_for(F&& f) {
   }
 }
 
+#endif
