@@ -19,20 +19,16 @@ __global__ void pbc_kernel(double *result, const int *pair_indices,
 
   OVLP_SPELL;
 
-  if constexpr (i_angular == 0 && j_angular == 0) {
-    atomicAdd(result, prefactor * prefactor * prefactor);
-  } else {
-    double x_pairs[(i_angular + 1) * (j_angular + 1)];
-    reset(x, 0, 0);
+  double x_pairs[(i_angular + 1) * (j_angular + 1)];
+  reset(x, 0, 0);
 
-    double y_pairs[(i_angular + 1) * (j_angular + 1)];
-    reset(y, 0, 0);
+  double y_pairs[(i_angular + 1) * (j_angular + 1)];
+  reset(y, 0, 0);
 
-    double z_pairs[(i_angular + 1) * (j_angular + 1)];
-    reset(z, 0, 0);
+  double z_pairs[(i_angular + 1) * (j_angular + 1)];
+  reset(z, 0, 0);
 
-    write(0);
-  }
+  write(0);
 }
 
 template <int i_angular, int j_angular>

@@ -3,6 +3,8 @@
 #include "macro.cuh"
 #include "recursion.cuh"
 #include "write.cuh"
+#include "utils.h"
+#include "config.h"
 
 namespace ovlp {
 template <int i_angular, int j_angular>
@@ -19,20 +21,16 @@ __global__ void kernel(double *result, const int *pair_indices,
   result += blockIdx.y * n_functions * n_functions +
             i_function_index * n_functions + j_function_index;
 
-  if constexpr (i_angular == 0 && j_angular == 0) {
-    atomicAdd(result, prefactor * prefactor * prefactor);
-  } else {
-    double x_pairs[(i_angular + 1) * (j_angular + 1)];
-    reset(x, 0, 0);
+  double x_pairs[(i_angular + 1) * (j_angular + 1)];
+  reset(x, 0, 0);
 
-    double y_pairs[(i_angular + 1) * (j_angular + 1)];
-    reset(y, 0, 0);
+  double y_pairs[(i_angular + 1) * (j_angular + 1)];
+  reset(y, 0, 0);
 
-    double z_pairs[(i_angular + 1) * (j_angular + 1)];
-    reset(z, 0, 0);
+  double z_pairs[(i_angular + 1) * (j_angular + 1)];
+  reset(z, 0, 0);
 
-    write(0);
-  }
+  write(0);
 }
 
 template <int i_angular, int j_angular>
@@ -88,7 +86,14 @@ void overlap(cudaStream_t stream,
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
                         1};
 
-  switch (i_angular * 10 + j_angular) { tabulate_kernel(ovlp::kernel); }
+  dispatch_range<0, LMAX1>(i_angular, [&]<int li>() {
+    dispatch_range<li, LMAX1>(j_angular, [&]<int lj>() {
+      ovlp::kernel<li, lj><<<block_grid, block_size, 0, stream>>>(
+          result, pair_indices, n_primitives, n_pairs, primitive_to_function,
+          n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,
+          is_screened);
+    });
+  });
 }
 
 void overlap_gradient(cudaStream_t stream,
@@ -105,5 +110,12 @@ void overlap_gradient(cudaStream_t stream,
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
                         1};
 
-  switch (i_angular * 10 + j_angular) { tabulate_kernel(ovlp::gradient); }
+  dispatch_range<0, LMAX1>(i_angular, [&]<int li>() {
+    dispatch_range<li, LMAX1>(j_angular, [&]<int lj>() {
+      ovlp::gradient<li, lj><<<block_grid, block_size, 0, stream>>>(
+          result, pair_indices, n_primitives, n_pairs, primitive_to_function,
+          n_functions, atm, atm_stride, bas, bas_stride, env, env_stride,
+          is_screened);
+    });
+  });
 }

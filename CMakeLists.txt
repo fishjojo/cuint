@@ -29,6 +29,12 @@ message(STATUS "cuint CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 
 include(GNUInstallDirs)
 
+set(MAX_L 4 CACHE STRING "The maximum angular momentum limit")
+configure_file(
+    "${PROJECT_SOURCE_DIR}/include/config.h.in"
+    "${PROJECT_BINARY_DIR}/config.h"
+)
+
 set(cuintSrc
   src/overlap.cu src/dipole.cu src/quadrupole.cu
   src/pbc_overlap.cu
@@ -52,6 +58,7 @@ target_include_directories(cuint
     ${PROJECT_SOURCE_DIR}/include
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}
 )
 
 install(TARGETS cuint

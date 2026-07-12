@@ -1,0 +1,3 @@
+#pragma once
+
+constexpr int LMAX1 = @MAX_L@ + 1;

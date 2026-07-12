@@ -15,8 +15,8 @@ consteval double csqrt(double x) {
     return x;
   }
   
-  double curr = x;
-  double prev = x * 2.0;
+  double curr = (x < 1.0) ? 1.0 : x;
+  double prev = curr * 2.0;
   
   while (curr < prev) {
     prev = curr;

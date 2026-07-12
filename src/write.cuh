@@ -15,20 +15,16 @@ write_integral(double *output, const double x_pairs[], const double y_pairs[],
   constexpr auto Cj = c2s_matrix<j_angular>();
   constexpr auto Bj = cart_ls<j_angular>();
 
-  static_for<0, 2*i_angular+1>([&](auto ioff_) {
-    constexpr int ioff = decltype(ioff_)::value;
-    static_for<0, 2*j_angular+1>([&](auto joff_) {
-      constexpr int joff = decltype(joff_)::value;
+  static_for<0, 2*i_angular+1>([&]<int ioff>() {
+    static_for<0, 2*j_angular+1>([&]<int joff>() {
       double expression = 0.0;
 
-      static_for<0, ncart(i_angular)>([&](auto i_){
-        constexpr int i = decltype(i_)::value;
+      static_for<0, ncart(i_angular)>([&]<int i>() {
         constexpr double ci = Ci[ioff][i];
         constexpr double abs_ci = (ci < 0.0) ? -ci : ci;
         if constexpr (abs_ci > 1e-15) {
           constexpr int xi=Bi[i][0], yi=Bi[i][1], zi=Bi[i][2];
-          static_for<0, ncart(j_angular)>([&](auto j_){
-            constexpr int j = decltype(j_)::value;
+          static_for<0, ncart(j_angular)>([&]<int j>() {
             constexpr double cj = Cj[joff][j];
             constexpr double abs_cj = (cj < 0.0) ? -cj : cj;
             if constexpr (abs_cj > 1e-15) {

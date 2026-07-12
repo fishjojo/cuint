@@ -25,8 +25,7 @@ vertical_recursion(double result[], const double a00,
     result[1] = factor_from_previous * a00;
   }
 
-  static_for<1, angular>([&](auto i_) {
-    constexpr int i = decltype(i_)::value;
+  static_for<1, angular>([&]<int i>() {
     result[i + 1] = i * factor_from_second_previous * result[i - 1] +
                     factor_from_previous * result[i];
   });
@@ -83,10 +82,9 @@ __forceinline__ __device__
 void horizontal_recursion(double result[], const double shift_to_here) {
   constexpr int L = i_angular + j_angular, ncol = j_angular + 1;
 
-  static_for<0, i_angular>([&](auto a_) {
-    constexpr int a = decltype(a_)::value;
-    static_for<0, L - a>([&](auto k_) {
-      constexpr int b = L - a - 1 - decltype(k_)::value;
+  static_for<0, i_angular>([&]<int a>() {
+    static_for<0, L - a>([&]<int k>() {
+      constexpr int b = L - a - 1 - k;
       result[(a+1)*ncol + b] = result[a*ncol + b+1] + shift_to_here * result[a*ncol + b];
     });
   });
