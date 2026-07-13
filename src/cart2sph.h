@@ -14,10 +14,10 @@ consteval double csqrt(double x) {
   if (x == 0.0 || x == std::numeric_limits<double>::infinity()) {
     return x;
   }
-  
+
   double curr = (x < 1.0) ? 1.0 : x;
   double prev = curr * 2.0;
-  
+
   while (curr < prev) {
     prev = curr;
     curr = 0.5 * (curr + x / curr);
@@ -50,7 +50,7 @@ consteval double ccomb(int n, int k) {
 consteval double cpow(double base, int exp) {
   if (exp == 0) return 1.0;
   if (exp < 0) return 1.0 / cpow(base, -exp);
-  
+
   double result = 1.0;
   while (exp > 0) {
     if (exp % 2 == 1) result *= base;
@@ -60,20 +60,20 @@ consteval double cpow(double base, int exp) {
   return result;
 }
 
-template<typename T>
+template <typename T>
 consteval int delta(const T& a, const T& b) {
   return (a == b) ? 1 : 0;
 }
 
 consteval double N(int l, int mu) {
   double fac = (2 - delta(mu, 0)) * (2 * l + 1) / (4 * std::numbers::pi);
-  double result = csqrt(fac * cfactorial(l-mu) / cfactorial(l+mu));
+  double result = csqrt(fac * cfactorial(l - mu) / cfactorial(l + mu));
   return result;
 }
 
 consteval double A(int l, int k, int mu) {
-  double denom = cfactorial(k) * cfactorial(l-k) * cfactorial(l-mu-2*k);
-  double result = cpow(-1, k) / cpow(2, l) * cfactorial(2*l-2*k) / denom;
+  double denom = cfactorial(k) * cfactorial(l - k) * cfactorial(l - mu - 2 * k);
+  double result = cpow(-1, k) / cpow(2, l) * cfactorial(2 * l - 2 * k) / denom;
   return result;
 }
 
@@ -105,7 +105,7 @@ consteval double H(int r, int s, int m) {
   }
 }
 
-} //namespace c2s_helpers
+} // namespace c2s_helpers
 
 consteval double c2s(int l, int m, int lx, int ly, int lz) {
   using namespace c2s_helpers;
@@ -147,7 +147,7 @@ consteval double c2s(int l, int m, int lx, int ly, int lz) {
         int r = lx - 2 * u;
         int s = ly - 2 * v;
         tmp += cfactorial(k) / cfactorial(u) / cfactorial(v) / cfactorial(w) *
-               H(r, s, m) * delta(lz, l-mu-2*k+2*w);
+               H(r, s, m) * delta(lz, l - mu - 2 * k + 2 * w);
       }
     }
     result += A(l, k, mu) * tmp;
@@ -157,13 +157,11 @@ consteval double c2s(int l, int m, int lx, int ly, int lz) {
   return result;
 }
 
-consteval int ncart(int l){
-  return (l + 1) * (l + 2) / 2;
-}
+consteval int ncart(int l) { return (l + 1) * (l + 2) / 2; }
 
 template <int l>
-consteval std::array<std::array<double, ncart(l)>, 2*l+1> c2s_matrix() {
-  std::array<std::array<double, ncart(l)>, 2*l+1> coeff{};
+consteval std::array<std::array<double, ncart(l)>, 2 * l + 1> c2s_matrix() {
+  std::array<std::array<double, ncart(l)>, 2 * l + 1> coeff{};
   for (int m = -l; m <= l; ++m) {
     int c = 0;
     for (int lx = l; lx >= 0; --lx)
@@ -174,12 +172,11 @@ consteval std::array<std::array<double, ncart(l)>, 2*l+1> c2s_matrix() {
 }
 
 template <int l>
-consteval std::array<std::array<int,3>, ncart(l)> cart_ls() {
-  std::array<std::array<int,3>, ncart(l)> t{};
+consteval std::array<std::array<int, 3>, ncart(l)> cart_ls() {
+  std::array<std::array<int, 3>, ncart(l)> t{};
   int c = 0;
   for (int lx = l; lx >= 0; --lx)
-    for (int ly = l - lx; ly >= 0; --ly)
-      t[c++] = {lx, ly, l - lx - ly};
+    for (int ly = l - lx; ly >= 0; --ly) t[c++] = {lx, ly, l - lx - ly};
   return t;
 }
 

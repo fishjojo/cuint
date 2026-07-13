@@ -1,4 +1,5 @@
 #include <math.h>
+
 #include "cuint.h"
 #include "macro.cuh"
 #include "recursion.cuh"
@@ -6,18 +7,18 @@
 
 namespace ovlp {
 template <int i_angular, int j_angular>
-__global__ void
-dipole_kernel(double *result, const int *pair_indices, const int n_primitives,
-              const int n_pairs, const int *primitive_to_function,
-              const int n_functions, const int *atm, const int atm_stride,
-              const int *bas, const int bas_stride, const double *env,
-              const int env_stride, const int is_screened) {
-
+__global__ void dipole_kernel(double *result, const int *pair_indices,
+                              const int n_primitives, const int n_pairs,
+                              const int *primitive_to_function,
+                              const int n_functions, const int *atm,
+                              const int atm_stride, const int *bas,
+                              const int bas_stride, const double *env,
+                              const int env_stride, const int is_screened) {
   OVLP_SPELL;
 
   const double reference_point_x = env[PTR_COMMON_ORIG];
-  const double reference_point_y = env[PTR_COMMON_ORIG+1];
-  const double reference_point_z = env[PTR_COMMON_ORIG+2];
+  const double reference_point_y = env[PTR_COMMON_ORIG + 1];
+  const double reference_point_z = env[PTR_COMMON_ORIG + 2];
 
   result += blockIdx.y * 3 * n_functions * n_functions +
             i_function_index * n_functions + j_function_index;
@@ -47,18 +48,18 @@ dipole_kernel(double *result, const int *pair_indices, const int n_primitives,
 }
 
 template <int i_angular, int j_angular>
-__global__ void
-dipole_gradient(double *result, const int *pair_indices, const int n_primitives,
-                const int n_pairs, const int *primitive_to_function,
-                const int n_functions, const int *atm, const int atm_stride,
-                const int *bas, const int bas_stride, const double *env,
-                const int env_stride, const int is_screened) {
-
+__global__ void dipole_gradient(double *result, const int *pair_indices,
+                                const int n_primitives, const int n_pairs,
+                                const int *primitive_to_function,
+                                const int n_functions, const int *atm,
+                                const int atm_stride, const int *bas,
+                                const int bas_stride, const double *env,
+                                const int env_stride, const int is_screened) {
   OVLP_SPELL;
 
   const double reference_point_x = env[PTR_COMMON_ORIG];
-  const double reference_point_y = env[PTR_COMMON_ORIG+1];
-  const double reference_point_z = env[PTR_COMMON_ORIG+2];
+  const double reference_point_y = env[PTR_COMMON_ORIG + 1];
+  const double reference_point_z = env[PTR_COMMON_ORIG + 2];
 
   result += blockIdx.y * 9 * n_functions * n_functions +
             i_function_index * n_functions + j_function_index;
@@ -131,33 +132,28 @@ dipole_gradient(double *result, const int *pair_indices, const int n_primitives,
 }
 } // namespace ovlp
 
-void dipole(cudaStream_t stream,
-            double *result, const int *pair_indices, const int n_pairs,
-            const int n_primitives, const int *primitive_to_function,
-            const int n_functions, const int *atm, const int atm_stride,
-            const int *bas, const int bas_stride, const double *env,
-            const int env_stride, const int n_configurations,
-            const int i_angular, const int j_angular,
-            const int is_screened) {
-
+void dipole(cudaStream_t stream, double *result, const int *pair_indices,
+            const int n_pairs, const int n_primitives,
+            const int *primitive_to_function, const int n_functions,
+            const int *atm, const int atm_stride, const int *bas,
+            const int bas_stride, const double *env, const int env_stride,
+            const int n_configurations, const int i_angular,
+            const int j_angular, const int is_screened) {
   const dim3 block_size{256, 1, 1};
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
                         1};
 
-  switch (i_angular * 10 + j_angular) {
-    tabulate_kernel(ovlp::dipole_kernel);
-  }
+  switch (i_angular * 10 + j_angular) { tabulate_kernel(ovlp::dipole_kernel); }
 }
 
-void dipole_gradient(cudaStream_t stream,
-                     double *result, const int *pair_indices, const int n_pairs,
+void dipole_gradient(cudaStream_t stream, double *result,
+                     const int *pair_indices, const int n_pairs,
                      const int n_primitives, const int *primitive_to_function,
                      const int n_functions, const int *atm,
                      const int atm_stride, const int *bas, const int bas_stride,
                      const double *env, const int env_stride,
                      const int n_configurations, const int i_angular,
                      const int j_angular, const int is_screened) {
-
   const dim3 block_size{256, 1, 1};
   const dim3 block_grid{(uint)((n_pairs + 255) / 256), (uint)n_configurations,
                         1};

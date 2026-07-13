@@ -14,9 +14,9 @@ __forceinline__ __device__ constexpr T common_fac_sp() {
 }
 
 template <typename T, int angular>
-__forceinline__ __device__ void
-vertical_recursion(T result[], const T a00, const T factor_from_previous,
-                   const T factor_from_second_previous) {
+__forceinline__ __device__ void vertical_recursion(
+    T result[], const T a00, const T factor_from_previous,
+    const T factor_from_second_previous) {
   result[0] = a00;
   if constexpr (angular > 0) {
     result[1] = factor_from_previous * a00;
@@ -31,7 +31,6 @@ vertical_recursion(T result[], const T a00, const T factor_from_previous,
 template <typename T, int i_angular, int j_angular>
 __forceinline__ __device__ void horizontal_recursion(T result[],
                                                      const T shift_to_here) {
-
   if constexpr (i_angular == 1 && j_angular == 0) {
     result[1] = result[1] + shift_to_here * result[0];
   }
@@ -275,10 +274,9 @@ __forceinline__ __device__ void horizontal_recursion(T result[],
 }
 
 template <typename T, int i_angular, int j_angular>
-__forceinline__ __device__ void
-write_spherical_function_pairs(T *output, const T x_pairs[], const T y_pairs[],
-                               const T z_pairs[], const int n_functions) {
-
+__forceinline__ __device__ void write_spherical_function_pairs(
+    T *output, const T x_pairs[], const T y_pairs[], const T z_pairs[],
+    const int n_functions) {
   T expression;
 
   if constexpr (i_angular == 0 && j_angular == 0) {

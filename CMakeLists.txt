@@ -30,6 +30,8 @@ message(STATUS "cuint CMAKE_CUDA_ARCHITECTURES: ${CMAKE_CUDA_ARCHITECTURES}")
 include(GNUInstallDirs)
 
 set(MAX_L 4 CACHE STRING "The maximum angular momentum limit")
+set(MAX_DERIV 2 CACHE STRING "The maximum total derivative order")
+
 configure_file(
     "${PROJECT_SOURCE_DIR}/include/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"

@@ -296,6 +296,70 @@ def get_ovlp_gradient(plan):
     return result - result.transpose(0, 1, -1, -2)
 
 
+def gen_ovlp_block(plan, i_deriv, j_deriv):
+    comp = 3 ** (i_deriv + j_deriv)
+    result = cp.zeros(
+        (plan["n_configurations"], comp, plan["n_functions"], plan["n_functions"])
+    )
+
+    for i_angular, j_angular, pair_indices, n_pairs in plan["pairs"]:
+        libovlp.gen_overlap(
+            0,
+            cast_to_pointer(result),
+            cast_to_pointer(pair_indices),
+            ctypes.c_int(n_pairs),
+            ctypes.c_int(plan["n_primitives"]),
+            cast_to_pointer(plan["shell_to_ao"]),
+            ctypes.c_int(plan["n_functions"]),
+            cast_to_pointer(plan["atms"]),
+            ctypes.c_int(plan["atms"][0].size),
+            cast_to_pointer(plan["bases"]),
+            ctypes.c_int(plan["bases"][0].size),
+            cast_to_pointer(plan["envs"]),
+            ctypes.c_int(plan["envs"][0].size),
+            ctypes.c_int(plan["n_configurations"]),
+            ctypes.c_int(i_angular),
+            ctypes.c_int(j_angular),
+            ctypes.c_int(plan["is_screened"]),
+            ctypes.c_int(i_deriv),
+            ctypes.c_int(j_deriv),
+            ctypes.c_int(comp),
+        )
+
+    return result
+
+
+def get_gen_ovlp(plan, i_deriv=0, j_deriv=0):
+    """<d^i_deriv i | d^j_deriv j> with derivatives taken with respect to the
+    electron coordinate (libcint ip convention).
+
+    Returns an array of shape (n_configurations, 3**(i_deriv + j_deriv),
+    n_functions, n_functions). Components are ordered as the Cartesian
+    product of i_deriv copies of (xi, yi, zi) followed by j_deriv copies of
+    (xj, yj, zj), the leftmost slot varying slowest, e.g. xixi, xiyi, ...,
+    zizi for (2, 0) and xixj, xiyj, ..., zizj for (1, 1).
+
+    i_deriv + j_deriv must not exceed the MAX_DERIV the library was built
+    with, otherwise the result is silently zero.
+    """
+    n_conf = plan["n_configurations"]
+    n_ao = plan["n_functions"]
+    n_i, n_j = 3**i_deriv, 3**j_deriv
+
+    upper = gen_ovlp_block(plan, i_deriv, j_deriv)
+    if i_deriv == j_deriv:
+        lower = upper
+    else:
+        lower = gen_ovlp_block(plan, j_deriv, i_deriv)
+
+    # blocks with bra angular momentum > ket angular momentum come from
+    # transposing <d^j_deriv j | d^i_deriv i>, with the component axes swapped
+    lower = lower.reshape(n_conf, n_j, n_i, n_ao, n_ao).transpose(0, 2, 1, 4, 3)
+    result = upper.reshape(n_conf, n_i, n_j, n_ao, n_ao) + lower
+
+    return result.reshape(n_conf, n_i * n_j, n_ao, n_ao)
+
+
 def get_dipole(plan):
     result = cp.zeros(
         (plan["n_configurations"], 3, plan["n_functions"], plan["n_functions"])

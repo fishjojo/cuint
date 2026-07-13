@@ -16,10 +16,9 @@ __forceinline__ __device__ constexpr double common_fac_sp() {
 }
 
 template <int angular>
-__forceinline__ __device__ void
-vertical_recursion(double result[], const double a00,
-                   const double factor_from_previous,
-                   const double factor_from_second_previous) {
+__forceinline__ __device__ void vertical_recursion(
+    double result[], const double a00, const double factor_from_previous,
+    const double factor_from_second_previous) {
   result[0] = a00;
   if constexpr (angular > 0) {
     result[1] = factor_from_previous * a00;
@@ -45,8 +44,8 @@ __forceinline__ __device__ void insert_position_operator(double result[],
 }
 
 template <int i_angular, int j_angular, int stride>
-__forceinline__ __device__ void
-insert_gradient_operator(double result[], const double recursion_factor) {
+__forceinline__ __device__ void insert_gradient_operator(
+    double result[], const double recursion_factor) {
 #pragma unroll
   for (int i = 0; i <= i_angular; i++) {
     double gradient, lower_order = 0;
@@ -61,9 +60,8 @@ insert_gradient_operator(double result[], const double recursion_factor) {
 }
 
 template <int i_angular, int j_angular, int stride>
-__forceinline__ __device__ void
-insert_gradient_operator_to_bra(double result[],
-                                const double recursion_factor) {
+__forceinline__ __device__ void insert_gradient_operator_to_bra(
+    double result[], const double recursion_factor) {
 #pragma unroll
   for (int j = 0; j <= j_angular; j++) {
     double gradient, lower_order = 0;
@@ -77,15 +75,42 @@ insert_gradient_operator_to_bra(double result[],
   }
 }
 
+template <int i_angular, int j_angular, int stride>
+__forceinline__ __device__ void nabla1i_1e(double result[],
+                                           const double recursion_factor) {
+  static_for<0, j_angular + 1>([&]<int j>() {
+    double g, lower_order = 0;
+    static_for<0, i_angular + 1>([&]<int i>() {
+      g = i * lower_order - recursion_factor * result[(i + 1) * stride + j];
+      lower_order = result[i * stride + j];
+      result[i * stride + j] = g;
+    });
+  });
+}
+
+template <int i_angular, int j_angular, int stride>
+__forceinline__ __device__ void nabla1j_1e(double result[],
+                                           const double recursion_factor) {
+  static_for<0, i_angular + 1>([&]<int i>() {
+    double g, lower_order = 0;
+    static_for<0, j_angular + 1>([&]<int j>() {
+      g = j * lower_order - recursion_factor * result[i * stride + j + 1];
+      lower_order = result[i * stride + j];
+      result[i * stride + j] = g;
+    });
+  });
+}
+
 template <int i_angular, int j_angular>
-__forceinline__ __device__
-void horizontal_recursion(double result[], const double shift_to_here) {
+__forceinline__ __device__ void horizontal_recursion(
+    double result[], const double shift_to_here) {
   constexpr int L = i_angular + j_angular, ncol = j_angular + 1;
 
   static_for<0, i_angular>([&]<int a>() {
     static_for<0, L - a>([&]<int k>() {
       constexpr int b = L - a - 1 - k;
-      result[(a+1)*ncol + b] = result[a*ncol + b+1] + shift_to_here * result[a*ncol + b];
+      result[(a + 1) * ncol + b] =
+          result[a * ncol + b + 1] + shift_to_here * result[a * ncol + b];
     });
   });
 }

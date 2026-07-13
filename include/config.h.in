@@ -1,3 +1,4 @@
 #pragma once
 
 constexpr int LMAX1 = @MAX_L@ + 1;
+constexpr int DerivMAX1 = @MAX_DERIV@ + 1;
