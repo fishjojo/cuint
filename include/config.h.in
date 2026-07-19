@@ -1,4 +1,10 @@
 #pragma once
 
+#define CUINT_MAX_L @MAX_L@
+#define CUINT_G3C2E_MAX_L_AUX @G3C2E_MAX_L_AUX@
+
 constexpr int LMAX1 = @MAX_L@ + 1;
 constexpr int DerivMAX1 = @MAX_DERIV@ + 1;
+
+constexpr int G3cPairLMAX1 = @G3C2E_MAX_L_PAIR@ + 1;
+constexpr int G3cAuxLMAX1 = @G3C2E_MAX_L_AUX@ + 1;

@@ -31,6 +31,10 @@ include(GNUInstallDirs)
 
 set(MAX_L 4 CACHE STRING "The maximum angular momentum limit")
 set(MAX_DERIV 2 CACHE STRING "The maximum total derivative order")
+set(G3C2E_MAX_L_PAIR 2 CACHE STRING
+    "Maximum AO angular momentum of the fused 3c2e kernels")
+set(G3C2E_MAX_L_AUX 4 CACHE STRING
+    "Maximum aux angular momentum of the fused 3c2e kernels")
 
 configure_file(
     "${PROJECT_SOURCE_DIR}/include/config.h.in"
@@ -39,7 +43,7 @@ configure_file(
 
 set(cuintSrc
   src/overlap.cu src/dipole.cu src/quadrupole.cu
-  src/pbc_overlap.cu
+  src/pbc_overlap.cu src/g3c2e.cu
 )
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -62,6 +66,24 @@ target_include_directories(cuint
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_BINARY_DIR}
 )
+
+# The int3c2e kernels are template-unrolled per (li, lj, lk) class; shard the
+# instantiations over one translation unit per aux angular momentum so they
+# compile in parallel.
+foreach(LK RANGE 0 ${G3C2E_MAX_L_AUX})
+  add_library(g3c2e_lk${LK} OBJECT src/g3c2e_ints.cu)
+  target_compile_definitions(g3c2e_lk${LK} PRIVATE G3C2E_INST_LK=${LK})
+  target_compile_options(g3c2e_lk${LK} PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
+  )
+  target_include_directories(g3c2e_lk${LK} PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}
+  )
+  set_target_properties(g3c2e_lk${LK} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_sources(cuint PRIVATE $<TARGET_OBJECTS:g3c2e_lk${LK}>)
+endforeach()
 
 install(TARGETS cuint
   DESTINATION ${CMAKE_INSTALL_LIBDIR}

@@ -70,6 +70,17 @@ void quadrupole_gradient(
     const int n_configurations, const int i_angular, const int j_angular,
     const int is_screened);
 
+void int3c2e(cudaStream_t stream,
+             double *result, const int *pair_indices, const int n_pairs,
+             const int n_primitives, const int *primitive_to_function,
+             const int n_functions, const int *aux_indices,
+             const int n_aux_primitives,
+             const int *aux_primitive_to_function, const int n_aux,
+             const int *atm, const int atm_stride, const int *bas,
+             const int bas_stride, const double *env, const int env_stride,
+             const int n_configurations, const int i_angular,
+             const int j_angular, const int k_angular, const int is_screened);
+
 void pbc_overlap(cudaStream_t stream,
                  double *result, const int *pair_indices, const int n_pairs,
                  const int n_primitives, const int *primitive_to_function,
