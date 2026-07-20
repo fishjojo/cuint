@@ -33,8 +33,16 @@ set(MAX_L 4 CACHE STRING "The maximum angular momentum limit")
 set(MAX_DERIV 2 CACHE STRING "The maximum total derivative order")
 set(G3C2E_MAX_L_PAIR 2 CACHE STRING
     "Maximum AO angular momentum of the fused 3c2e kernels")
-set(G3C2E_MAX_L_AUX 4 CACHE STRING
+set(G3C2E_MAX_L_AUX 6 CACHE STRING
     "Maximum aux angular momentum of the fused 3c2e kernels")
+set(G3C2E_MAX_L_TOTAL 6 CACHE STRING
+    "Maximum total angular momentum (li + lj + lk) of the fused 3c2e
+     kernels; classes above it route through the two-stage path. Compile
+     time and cicc memory grow steeply with this cap")
+set(G3C2E_TS_MAX_L_PAIR 4 CACHE STRING
+    "Maximum AO angular momentum of the two-stage 3c2e path")
+set(G3C2E_TS_MAX_L_AUX 6 CACHE STRING
+    "Maximum aux angular momentum of the two-stage 3c2e path")
 
 configure_file(
     "${PROJECT_SOURCE_DIR}/include/config.h.in"
@@ -43,8 +51,13 @@ configure_file(
 
 set(cuintSrc
   src/overlap.cu src/dipole.cu src/quadrupole.cu
-  src/pbc_overlap.cu src/g3c2e.cu
+  src/pbc_overlap.cu src/g3c2e.cu src/g3c2e_ts.cu src/int3c2e.cu
+  # testing-only entries (test/test_3c2e_ts_units.py), kept out of the
+  # production sources
+  src/g3c2e_ts_test.cu
 )
+
+find_package(CUDAToolkit REQUIRED)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
@@ -59,6 +72,8 @@ target_compile_options(cuint PRIVATE
   $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
 )
 
+target_link_libraries(cuint PRIVATE CUDA::cublas)
+
 target_include_directories(cuint
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -72,7 +87,7 @@ target_include_directories(cuint
 # compile in parallel.
 foreach(LK RANGE 0 ${G3C2E_MAX_L_AUX})
   add_library(g3c2e_lk${LK} OBJECT src/g3c2e_ints.cu)
-  target_compile_definitions(g3c2e_lk${LK} PRIVATE G3C2E_INST_LK=${LK})
+  target_compile_definitions(g3c2e_lk${LK} PRIVATE G3C2E_INTS_LK=${LK})
   target_compile_options(g3c2e_lk${LK} PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
   )
@@ -83,6 +98,23 @@ foreach(LK RANGE 0 ${G3C2E_MAX_L_AUX})
   )
   set_target_properties(g3c2e_lk${LK} PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_sources(cuint PRIVATE $<TARGET_OBJECTS:g3c2e_lk${LK}>)
+endforeach()
+
+# The two-stage Phase B launchers are sharded the same way, one translation
+# unit per aux angular momentum.
+foreach(LK RANGE 0 ${G3C2E_TS_MAX_L_AUX})
+  add_library(g3c2e_ts_lk${LK} OBJECT src/g3c2e_ts_ints.cu)
+  target_compile_definitions(g3c2e_ts_lk${LK} PRIVATE G3C2E_TS_INST_LK=${LK})
+  target_compile_options(g3c2e_ts_lk${LK} PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
+  )
+  target_include_directories(g3c2e_ts_lk${LK} PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}
+  )
+  set_target_properties(g3c2e_ts_lk${LK} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_sources(cuint PRIVATE $<TARGET_OBJECTS:g3c2e_ts_lk${LK}>)
 endforeach()
 
 install(TARGETS cuint

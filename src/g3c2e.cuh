@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
 
 #include "boys.cuh"
 #include "cart2sph.h"
@@ -343,9 +344,10 @@ __global__ void kernel(double *result, const int *pair_indices,
                              n_aux);
 }
 
-// Launch every (li <= lj) pair class for one aux angular momentum. Explicitly
-// instantiated once per lk in g3c2e_ints.cu so the heavy kernel unrolling is
-// spread over parallel translation units.
+// Launch every (li <= lj) pair class for one aux angular momentum, bounded
+// by the total angular momentum cap (classes above it belong to the
+// two-stage path). Explicitly instantiated once per lk in g3c2e_ints.cu so
+// the heavy kernel unrolling is spread over parallel translation units.
 template <int lk>
 void launch(cudaStream_t stream, double *result, const int *pair_indices,
             const int n_pairs, const int n_primitives,
@@ -362,18 +364,26 @@ void launch(cudaStream_t stream, double *result, const int *pair_indices,
 
   dispatch_range<0, G3cPairLMAX1>(i_angular, [&]<int li>() {
     dispatch_range<li, G3cPairLMAX1>(j_angular, [&]<int lj>() {
-      kernel<li, lj, lk><<<block_grid, block_size, 0, stream>>>(
-          result, pair_indices, n_pairs, n_primitives, primitive_to_function,
-          n_functions, aux_indices, aux_primitive_to_function, n_aux, atm,
-          atm_stride, bas, bas_stride, env, env_stride, is_screened);
+      if constexpr (li + lj + lk <= G3cTotalLMAX) {
+        kernel<li, lj, lk><<<block_grid, block_size, 0, stream>>>(
+            result, pair_indices, n_pairs, n_primitives,
+            primitive_to_function, n_functions, aux_indices,
+            aux_primitive_to_function, n_aux, atm, atm_stride, bas,
+            bas_stride, env, env_stride, is_screened);
+      } else {
+        std::fprintf(stderr,
+                     "int3c2e_fused: class (%d,%d|%d) exceeds the compiled "
+                     "total angular momentum cap %d\n",
+                     li, lj, lk, G3cTotalLMAX);
+      }
     });
   });
 }
 
 // signature of launch<lk>, shared by the extern template declarations and the
 // explicit instantiations
-#define G3C2E_LAUNCH_PARAMS                                                  \
-  (cudaStream_t, double *, const int *, const int, const int, const int *,   \
+#define G3C2E_LAUNCH_PARAMS                                                 \
+  (cudaStream_t, double *, const int *, const int, const int, const int *,  \
    const int, const int *, const int, const int *, const int, const int *,  \
    const int, const int *, const int, const double *, const int, const int, \
    const int, const int, const int)

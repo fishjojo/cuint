@@ -21,6 +21,27 @@ from pyscf.gto.moleintor import make_loc
 
 from pyscf.gto import NPRIM_OF, NCTR_OF, ANG_OF, PTR_EXP, PTR_COEFF
 
+import os
+_cublas_dirs = []
+try:
+    with open("/proc/self/maps") as _maps:
+        for _line in _maps:
+            _path = _line.split()[-1]
+            if _path.endswith("libcublasLt.so.13"):
+                _cublas_dirs.append(os.path.dirname(_path))
+                break
+except OSError:
+    pass
+_cuda_home = (os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+              or "/usr/local/cuda")
+_cublas_dirs.append(os.path.join(_cuda_home, "lib64"))
+for _dir in _cublas_dirs:
+    try:
+        for _lib in ("libcublasLt.so.13", "libcublas.so.13"):
+            ctypes.CDLL(os.path.join(_dir, _lib), mode=ctypes.RTLD_GLOBAL)
+        break
+    except OSError:
+        continue
 
 libovlp = ctypes.CDLL("../lib/libcuint.so")
 

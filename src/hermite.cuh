@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "utils.h"
 
 // McMurchie-Davidson building blocks: the Hermite Gaussian index algebra,
@@ -8,11 +10,13 @@
 namespace md {
 
 // number of Hermite triples (t, u, v) with t + u + v <= l
-consteval int nherm(const int l) { return (l + 1) * (l + 2) * (l + 3) / 6; }
+__host__ __device__ constexpr int nherm(const int l) {
+  return (l + 1) * (l + 2) * (l + 3) / 6;
+}
 
 // linear index of the triple (t, u, v): shells |r| = t + u + v ascending,
 // within a shell t descending, then u descending
-constexpr int hindex(const int t, const int u, const int v) {
+__host__ __device__ constexpr int hindex(const int t, const int u, const int v) {
   const int s = t + u + v;
   return s * (s + 1) * (s + 2) / 6 + (s - t) * (s - t + 1) / 2 + v;
 }
@@ -22,7 +26,7 @@ struct Triple {
 };
 
 // inverse of hindex
-consteval Triple herm_triple(const int index) {
+__host__ __device__ constexpr Triple herm_triple(const int index) {
   int s = 0;
   while (nherm(s) <= index) {
     s++;
@@ -48,6 +52,36 @@ consteval Triple lowered(const Triple r, const int axis) {
 
 consteval int component(const Triple r, const int axis) {
   return axis == 0 ? r.t : (axis == 1 ? r.u : r.v);
+}
+
+// Precomputed index algebra for the table-driven two-stage kernels: entry i
+// caches herm_triple(i), the leading axis, and the hindex of the once- and
+// twice-lowered triples, replacing per-element herm_triple_rt while-loops.
+struct HermEntry {
+  short low1, low2;   // hindex of the once/twice-lowered triple
+  signed char axis;   // leading axis of the triple
+  signed char comp;   // component(once-lowered, axis); 0 means no 2nd term
+  signed char t, u, v;
+};
+
+template <int N>
+consteval std::array<HermEntry, N> make_herm_entries() {
+  std::array<HermEntry, N> entries{};
+  for (int i = 1; i < N; i++) {
+    const Triple p = herm_triple(i);
+    const int axis = leading_axis(p);
+    const Triple p1 = lowered(p, axis);
+    const int comp = component(p1, axis);
+    const Triple p2 = comp > 0 ? lowered(p1, axis) : p1;
+    entries[i] = {(short)hindex(p1.t, p1.u, p1.v),
+                  (short)hindex(p2.t, p2.u, p2.v),
+                  (signed char)axis,
+                  (signed char)comp,
+                  (signed char)p.t,
+                  (signed char)p.u,
+                  (signed char)p.v};
+  }
+  return entries;
 }
 
 // Hermite Coulomb tower: r[hindex(p)] = [p]^(0) for all |p| <= L, built in
@@ -104,7 +138,7 @@ consteval int nepair() {
 }
 
 template <int LA, int LB>
-consteval int eindex(const int a, const int b, const int p) {
+__host__ __device__ constexpr int eindex(const int a, const int b, const int p) {
   int offset = 0; // reserve a + b + 1 slots per (a, b), in a-major order
   for (int aa = 0; aa < a; aa++)
     for (int bb = 0; bb <= LB; bb++)

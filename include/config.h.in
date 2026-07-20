@@ -8,3 +8,13 @@ constexpr int DerivMAX1 = @MAX_DERIV@ + 1;
 
 constexpr int G3cPairLMAX1 = @G3C2E_MAX_L_PAIR@ + 1;
 constexpr int G3cAuxLMAX1 = @G3C2E_MAX_L_AUX@ + 1;
+// total angular momentum cap (li + lj + lk) of the fused 3c2e kernels
+#define CUINT_G3C2E_MAX_L_TOTAL @G3C2E_MAX_L_TOTAL@
+constexpr int G3cTotalLMAX = @G3C2E_MAX_L_TOTAL@;
+
+// caps of the two-stage (Hermite intermediate + grouped DGEMM) 3c2e path,
+// used for the classes above the fused caps
+#define CUINT_G3C2E_TS_MAX_L_PAIR @G3C2E_TS_MAX_L_PAIR@
+#define CUINT_G3C2E_TS_MAX_L_AUX @G3C2E_TS_MAX_L_AUX@
+constexpr int G3cTsPairLMAX1 = @G3C2E_TS_MAX_L_PAIR@ + 1;
+constexpr int G3cTsAuxLMAX1 = @G3C2E_TS_MAX_L_AUX@ + 1;
